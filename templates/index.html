@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeVault | Coding Library</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="app">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">&lt;/&gt;</span>
+            <span>CodeVault</span>
+        </div>
+
+        <p class="sidebar-label">WORKSPACE</p>
+        <a class="nav-item active" href="/">▦ &nbsp; My Snippets</a>
+
+        <div class="sidebar-bottom">
+            <div class="profile-icon">CV</div>
+            <div>
+                <strong>My Workspace</strong>
+                <small>Personal library</small>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <span class="breadcrumb">Workspace / <b>Snippets</b></span>
+            <span class="status"><span></span> Local database</span>
+        </header>
+
+        <section class="intro">
+            <div>
+                <p class="eyebrow">YOUR DEVELOPER WORKSPACE</p>
+                <h1>Code, organized.</h1>
+                <p class="subtitle">
+                    Your personal library for useful code and ideas.
+                </p>
+            </div>
+
+            <a href="#snippet-form" class="primary-button">
+                + New snippet
+            </a>
+        </section>
+
+        <section class="stats">
+            <div class="stat-card">
+                <span>Total snippets</span>
+                <strong>{{ snippets|length }}</strong>
+            </div>
+
+            <div class="stat-card">
+                <span>Languages</span>
+                <strong id="language-count">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span>Workspace</span>
+                <strong>Personal</strong>
+            </div>
+        </section>
+
+        <section class="library">
+
+            <div class="library-heading">
+                <div>
+                    <h2>Your library</h2>
+                    <p>Find and manage your saved code.</p>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <input
+                    type="search"
+                    id="search"
+                    placeholder="Search snippets, code, or descriptions..."
+                >
+
+                <select id="language-filter">
+                    <option value="all">All languages</option>
+                </select>
+            </div>
+
+            <div class="snippet-grid" id="snippet-grid">
+
+                {% for snippet in snippets %}
+                <article
+                    class="snippet-card"
+                    data-language="{{ snippet['language']|lower }}"
+                    data-search="{{ (snippet['title'] ~ ' ' ~ snippet['description'] ~ ' ' ~ snippet['code'] ~ ' ' ~ snippet['language'])|lower }}"
+                >
+
+                    <div class="card-top">
+                        <span class="language-tag">
+                            {{ snippet['language'] }}
+                        </span>
+
+                        <span class="snippet-id">
+                            #{{ snippet['id'] }}
+                        </span>
+                    </div>
+
+                    <h3>{{ snippet['title'] }}</h3>
+
+                    <p class="description">
+                        {{ snippet['description'] or 'No description added.' }}
+                    </p>
+
+                    <pre><code>{{ snippet['code'] }}</code></pre>
+
+                    <div class="card-footer">
+                        <button
+                            class="copy-button"
+                            type="button"
+                            data-code="{{ snippet['code'] }}"
+                        >
+                            Copy code
+                        </button>
+
+                        <div class="card-actions">
+                            <a href="{{ url_for('home', edit=snippet['id']) }}">
+                                Edit
+                            </a>
+
+                            <form
+                                action="{{ url_for('delete_snippet', snippet_id=snippet['id']) }}"
+                                method="POST"
+                                onsubmit="return confirm('Delete this snippet?')"
+                            >
+                                <button class="delete-button" type="submit">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">&lt;/&gt;</div>
+                    <h3>Your library is empty</h3>
+                    <p>Add your first code snippet using the form below.</p>
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <p class="no-results" id="no-results" hidden>
+                No matching snippets found.
+            </p>
+        </section>
+
+        <section class="form-section" id="snippet-form">
+
+            <div class="form-heading">
+                <div>
+                    <h2>
+                        {% if editing %}
+                            Edit snippet
+                        {% else %}
+                            Add a snippet
+                        {% endif %}
+                    </h2>
+                    <p>Save a useful piece of code for later.</p>
+                </div>
+            </div>
+
+            <form
+                class="snippet-form"
+                action="{% if editing %}{{ url_for('edit_snippet', snippet_id=editing['id']) }}{% else %}{{ url_for('add_snippet') }}{% endif %}"
+                method="POST"
+            >
+
+                <label for="title">Snippet title</label>
+                <input
+                    id="title"
+                    name="title"
+                    placeholder="e.g. Swap two numbers"
+                    required
+                    value="{{ editing['title'] if editing else '' }}"
+                >
+
+                <label for="language">Programming language</label>
+                <select id="language" name="language" required>
+                    {% for lang in ['C', 'C++', 'Python', 'Java', 'JavaScript', 'SQL', 'HTML/CSS', 'Other'] %}
+                    <option
+                        value="{{ lang }}"
+                        {% if editing and editing['language'] == lang %}selected{% endif %}
+                    >
+                        {{ lang }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <label for="description">Description</label>
+                <input
+                    id="description"
+                    name="description"
+                    placeholder="What does this code do?"
+                    value="{{ editing['description'] if editing else '' }}"
+                >
+
+                <label for="code">Code</label>
+                <textarea
+                    id="code"
+                    name="code"
+                    rows="8"
+                    placeholder="Paste your code here..."
+                    required
+                >{{ editing['code'] if editing else '' }}</textarea>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">
+                        {% if editing %}Save changes{% else %}Save snippet{% endif %}
+                    </button>
+
+                    {% if editing %}
+                    <a href="/" class="cancel-button">Cancel</a>
+                    {% endif %}
+                </div>
+
+            </form>
+        </section>
+
+        <footer>
+            CodeVault · Built with Flask, SQLite & JavaScript
+        </footer>
+
+    </main>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
