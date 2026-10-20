@@ -1,4 +1,3 @@
-
 const searchInput = document.getElementById("search");
 const languageFilter = document.getElementById("language-filter");
 const cards = Array.from(document.querySelectorAll(".snippet-card"));
