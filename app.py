@@ -1,58 +1,47 @@
+import os
 
+import psycopg
+from psycopg.rows import dict_row
 from flask import Flask, render_template, request, redirect, url_for
-import sqlite3
-from pathlib import Path
 
 app = Flask(__name__)
 
-DATABASE = Path(__file__).parent / "codevault.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_db():
-    connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-def initialize_database():
-    connection = get_db()
-
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS snippets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            language TEXT NOT NULL,
-            code TEXT NOT NULL,
-            description TEXT DEFAULT '',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL is missing. Add it in your hosting environment variables."
         )
-    """)
 
-    connection.commit()
-    connection.close()
+    return psycopg.connect(
+        DATABASE_URL,
+        row_factory=dict_row
+    )
 
 
 @app.route("/")
 def home():
-    connection = get_db()
+    with get_db() as connection:
+        snippets = connection.execute("""
+            SELECT id, title, language, code, description, created_at
+            FROM snippets
+            ORDER BY id DESC
+        """).fetchall()
 
-    snippets = connection.execute("""
-        SELECT * FROM snippets
-        ORDER BY id DESC
-    """).fetchall()
+        edit_id = request.args.get("edit", type=int)
+        editing = None
 
-    connection.close()
-
-    edit_id = request.args.get("edit", type=int)
-    editing = None
-
-    if edit_id:
-        connection = get_db()
-        editing = connection.execute(
-            "SELECT * FROM snippets WHERE id = ?",
-            (edit_id,)
-        ).fetchone()
-        connection.close()
+        if edit_id:
+            editing = connection.execute(
+                """
+                SELECT id, title, language, code, description
+                FROM snippets
+                WHERE id = %s
+                """,
+                (edit_id,)
+            ).fetchone()
 
     return render_template(
         "index.html",
@@ -71,15 +60,14 @@ def add_snippet():
     if not title or not language or not code:
         return redirect(url_for("home"))
 
-    connection = get_db()
-
-    connection.execute("""
-        INSERT INTO snippets (title, language, code, description)
-        VALUES (?, ?, ?, ?)
-    """, (title, language, code, description))
-
-    connection.commit()
-    connection.close()
+    with get_db() as connection:
+        connection.execute(
+            """
+            INSERT INTO snippets (title, language, code, description)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (title, language, code, description)
+        )
 
     return redirect(url_for("home"))
 
@@ -94,35 +82,40 @@ def edit_snippet(snippet_id):
     if not title or not language or not code:
         return redirect(url_for("home", edit=snippet_id))
 
-    connection = get_db()
-
-    connection.execute("""
-        UPDATE snippets
-        SET title = ?, language = ?, code = ?, description = ?
-        WHERE id = ?
-    """, (title, language, code, description, snippet_id))
-
-    connection.commit()
-    connection.close()
+    with get_db() as connection:
+        connection.execute(
+            """
+            UPDATE snippets
+            SET title = %s,
+                language = %s,
+                code = %s,
+                description = %s
+            WHERE id = %s
+            """,
+            (title, language, code, description, snippet_id)
+        )
 
     return redirect(url_for("home"))
 
 
 @app.route("/delete/<int:snippet_id>", methods=["POST"])
 def delete_snippet(snippet_id):
-    connection = get_db()
-
-    connection.execute(
-        "DELETE FROM snippets WHERE id = ?",
-        (snippet_id,)
-    )
-
-    connection.commit()
-    connection.close()
+    with get_db() as connection:
+        connection.execute(
+            "DELETE FROM snippets WHERE id = %s",
+            (snippet_id,)
+        )
 
     return redirect(url_for("home"))
 
 
-if __name__ == "__main__":
-    initialize_database()
-    app.run(debug=True)
+@app.route("/health")
+def health():
+    try:
+        with get_db() as connection:
+            connection.execute("SELECT 1")
+
+        return {"status": "ok", "database": "connected"}, 200
+
+    except Exception:
+        return {"status": "error", "database": "unavailable"}, 500
