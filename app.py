@@ -1,5 +1,4 @@
 import os
-
 import psycopg
 from psycopg.rows import dict_row
 from flask import Flask, render_template, request, redirect, url_for
