@@ -112,6 +112,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
+    ensure_schema()
     with get_db() as connection:
         row = connection.execute(
             "SELECT id, email FROM users WHERE id = %s",
