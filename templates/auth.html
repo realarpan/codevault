@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b0d12">
+    <title>{{ 'Create account' if mode == 'register' else 'Sign in' }} | CodeVault</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-shell">
+        <a class="brand auth-brand" href="{{ url_for('login') }}"><span class="brand-icon">⌘</span><span>CodeVault</span></a>
+        <section class="auth-card">
+            <p class="eyebrow">YOUR PRIVATE DEVELOPER WORKSPACE</p>
+            <h1>{{ 'Create your account' if mode == 'register' else 'Welcome back' }}</h1>
+            <p class="auth-subtitle">{{ 'Create an account to keep your snippets private and organized.' if mode == 'register' else 'Sign in to open your personal code library.' }}</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-stack" aria-live="polite">{% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+            {% endwith %}
+            <form class="snippet-form auth-form" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="email">Email address</label>
+                <input id="email" type="email" name="email" maxlength="254" autocomplete="email" placeholder="you@example.com" required value="{{ request.form.get('email', '') }}">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" placeholder="{{ 'At least 12 characters' if mode == 'register' else 'Your password' }}" required {% if mode == 'register' %}minlength="12"{% endif %}>
+                {% if mode == 'register' %}<p class="password-hint">Use at least 12 characters. Your password is stored as a secure hash.</p>{% endif %}
+                <button class="primary-button auth-submit" type="submit">{{ 'Create private account' if mode == 'register' else 'Sign in to CodeVault' }}</button>
+            </form>
+            <div class="auth-switch">{% if mode == 'register' %}Already have an account? <a href="{{ url_for('login') }}">Sign in</a>{% else %}New to CodeVault? <a href="{{ url_for('register') }}">Create an account</a>{% endif %}</div>
+        </section>
+        <p class="auth-footnote">Your snippets are separated by account and protected by sign-in.</p>
+    </main>
+</body>
+</html>
