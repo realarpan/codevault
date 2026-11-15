@@ -98,9 +98,15 @@ def ensure_schema():
         _schema_ready = True
 
 
+@app.route("/favicon.ico")
+def favicon():
+    # Browsers request this independently; it must not trigger database setup.
+    return "", 204
+
+
 @app.before_request
 def prepare_database():
-    if request.endpoint != "static":
+    if request.endpoint not in ("static", "favicon"):
         ensure_schema()
 
 
