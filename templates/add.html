@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_page = "add" %}
+{% block title %}{% if editing %}Edit snippet{% else %}Add snippet{% endif %} | CodeVault{% endblock %}
+{% block breadcrumb %}{% if editing %}Edit snippet{% else %}Add snippet{% endif %}{% endblock %}
+{% block content %}
+<section class="page-heading add-page-heading"><div><p class="eyebrow">CODE COLLECTION</p><h1>{% if editing %}Edit snippet{% else %}Add a snippet{% endif %}</h1><p class="page-subtitle">Save a useful piece of code for later.</p></div><a class="secondary-button" href="{{ url_for('library') }}">← Back to library</a></section>
+<div class="add-layout">
+  <section class="panel add-form-panel">
+    <div class="panel-heading"><div><h2>{% if editing %}Update your snippet{% else %}Snippet details{% endif %}</h2><p>Give your code a name and keep it easy to find.</p></div><span class="panel-icon">⌘</span></div>
+    <form class="snippet-form" action="{% if editing %}{{ url_for('edit_snippet', snippet_id=editing.id) }}{% else %}{{ url_for('add_snippet') }}{% endif %}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="title">Snippet title <span>Required</span></label><input id="title" name="title" maxlength="160" placeholder="e.g. Swap two numbers" required value="{{ editing.title if editing else '' }}">
+      <div class="form-two-col"><div><label for="language">Programming language <span>Required</span></label><select id="language" name="language" required>{% for lang in ['C', 'C++', 'Python', 'Java', 'JavaScript', 'SQL', 'HTML/CSS', 'Other'] %}<option value="{{ lang }}" {% if editing and editing.language == lang %}selected{% endif %}>{{ lang }}</option>{% endfor %}</select></div><div><label for="description">Description</label><input id="description" name="description" maxlength="500" placeholder="What does this code do?" value="{{ editing.description if editing else '' }}"></div></div>
+      <div class="code-label-row"><label for="code">Code <span>Required</span></label><small>Maximum 100,000 characters</small></div><textarea class="code-editor" id="code" name="code" rows="15" maxlength="100000" placeholder="// Paste your code here..." required>{{ editing.code if editing else '' }}</textarea>
+      <div class="form-actions"><button type="submit" class="primary-button">{% if editing %}Save changes{% else %}Save snippet{% endif %} <span>→</span></button><a href="{{ url_for('library') }}" class="cancel-button">Cancel</a></div>
+    </form>
+  </section>
+  <aside class="add-side-column">
+    <div class="panel tip-panel"><span class="tip-icon">✦</span><h3>Keep it organized</h3><p>Use a clear title and a short description so you can find this snippet quickly later.</p></div>
+    <div class="panel privacy-panel"><span class="privacy-icon">◈</span><h3>Your code stays private</h3><p>Snippets are stored in your personal account and are only visible to you.</p></div>
+  </aside>
+</div>
+{% endblock %}
