@@ -110,6 +110,18 @@ def prepare_database():
         ensure_schema()
 
 
+@app.context_processor
+def inject_workspace_context():
+    if current_user.is_authenticated:
+        with get_db() as connection:
+            count = connection.execute(
+                "SELECT COUNT(*) AS total FROM snippets WHERE user_id = %s",
+                (current_user.id,),
+            ).fetchone()["total"]
+        return {"nav_count": count}
+    return {"nav_count": 0}
+
+
 class User(UserMixin):
     def __init__(self, user_id, email):
         self.id = str(user_id)
