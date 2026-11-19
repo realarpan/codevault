@@ -156,26 +156,34 @@ def validate_snippet_form():
 @login_required
 def home():
     with get_db() as connection:
+        stats = connection.execute("""
+            SELECT COUNT(*) AS total,
+                   COUNT(DISTINCT LOWER(language)) AS languages
+            FROM snippets WHERE user_id = %s
+        """, (current_user.id,)).fetchone()
+        recent = connection.execute("""
+            SELECT id, title, language, description, created_at
+            FROM snippets WHERE user_id = %s
+            ORDER BY created_at DESC, id DESC LIMIT 6
+        """, (current_user.id,)).fetchall()
+        language_stats = connection.execute("""
+            SELECT language, COUNT(*) AS total
+            FROM snippets WHERE user_id = %s
+            GROUP BY language ORDER BY total DESC, language ASC LIMIT 5
+        """, (current_user.id,)).fetchall()
+    return render_template("overview.html", stats=stats, recent=recent, language_stats=language_stats)
+
+
+@app.route("/library")
+@login_required
+def library():
+    with get_db() as connection:
         snippets = connection.execute("""
             SELECT id, title, language, code, description, created_at
-            FROM snippets
-            WHERE user_id = %s
-            ORDER BY id DESC
+            FROM snippets WHERE user_id = %s
+            ORDER BY created_at DESC, id DESC
         """, (current_user.id,)).fetchall()
-
-        edit_id = request.args.get("edit", type=int)
-        editing = None
-        if edit_id:
-            editing = connection.execute("""
-                SELECT id, title, language, code, description
-                FROM snippets
-                WHERE id = %s AND user_id = %s
-            """, (edit_id, current_user.id)).fetchone()
-
-    if request.args.get("edit") and not editing:
-        flash("That snippet was not found in your account.", "error")
-
-    return render_template("index.html", snippets=snippets, editing=editing)
+    return render_template("library.html", snippets=snippets)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -260,12 +268,26 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/add", methods=["POST"])
+@app.route("/add", methods=["GET", "POST"])
 @login_required
 def add_snippet():
+    if request.method == "GET":
+        edit_id = request.args.get("edit", type=int)
+        editing = None
+        if edit_id:
+            with get_db() as connection:
+                editing = connection.execute("""
+                    SELECT id, title, language, code, description
+                    FROM snippets WHERE id = %s AND user_id = %s
+                """, (edit_id, current_user.id)).fetchone()
+            if not editing:
+                flash("That snippet was not found in your account.", "error")
+                return redirect(url_for("library"))
+        return render_template("add.html", editing=editing)
+
     values = validate_snippet_form()
     if not values:
-        return redirect(url_for("home"))
+        return redirect(url_for("add_snippet"))
 
     with get_db() as connection:
         connection.execute("""
@@ -274,7 +296,7 @@ def add_snippet():
         """, (current_user.id, *values))
 
     flash("Snippet saved to your private library.", "success")
-    return redirect(url_for("home"))
+    return redirect(url_for("library"))
 
 
 @app.route("/edit/<int:snippet_id>", methods=["POST"])
@@ -282,7 +304,7 @@ def add_snippet():
 def edit_snippet(snippet_id):
     values = validate_snippet_form()
     if not values:
-        return redirect(url_for("home", edit=snippet_id))
+        return redirect(url_for("add_snippet", edit=snippet_id))
 
     with get_db() as connection:
         result = connection.execute("""
@@ -296,7 +318,7 @@ def edit_snippet(snippet_id):
     else:
         flash("Snippet updated.", "success")
 
-    return redirect(url_for("home"))
+    return redirect(url_for("library"))
 
 
 @app.route("/delete/<int:snippet_id>", methods=["POST"])
@@ -313,7 +335,7 @@ def delete_snippet(snippet_id):
     else:
         flash("That snippet was not found in your account.", "error")
 
-    return redirect(url_for("home"))
+    return redirect(url_for("library"))
 
 
 @app.route("/health")
