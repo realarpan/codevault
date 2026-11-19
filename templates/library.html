@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% set active_page = "library" %}
+{% block title %}My Library | CodeVault{% endblock %}
+{% block breadcrumb %}My Library{% endblock %}
+{% block content %}
+<section class="page-heading library-page-heading"><div><p class="eyebrow">YOUR PERSONAL COLLECTION</p><h1>My Library</h1><p class="page-subtitle">All your saved snippets, organized in one place.</p></div><a class="primary-button" href="{{ url_for('add_snippet') }}">＋ Add snippet</a></section>
+<section class="library-toolbar-panel">
+  <div class="library-toolbar-copy"><div><h2>{{ snippets|length }} snippet{% if snippets|length != 1 %}s{% endif %}</h2><p>Search, filter, copy or manage your saved code.</p></div><span class="library-private-pill"><i></i> Private</span></div>
+  <div class="toolbar"><label class="search-wrap"><span>⌕</span><input type="search" id="search" placeholder="Search by title, language, description or code..." aria-label="Search snippets"></label><select id="language-filter" aria-label="Filter by language"><option value="all">All languages</option></select></div>
+</section>
+<div class="snippet-grid library-snippet-grid" id="snippet-grid">
+  {% for snippet in snippets %}
+  <article class="snippet-card" data-language="{{ snippet.language|lower }}" data-search="{{ (snippet.title ~ ' ' ~ snippet.description ~ ' ' ~ snippet.code ~ ' ' ~ snippet.language)|lower }}">
+    <div class="card-top"><span class="language-tag">{{ snippet.language }}</span><span class="snippet-id">#{{ snippet.id }}</span></div>
+    <h3>{{ snippet.title }}</h3><p class="description">{{ snippet.description or 'No description added.' }}</p>
+    <pre><code>{{ snippet.code }}</code></pre>
+    <div class="card-footer"><button class="copy-button" type="button" data-code="{{ snippet.code|e }}">Copy code</button><div class="card-actions"><a href="{{ url_for('add_snippet', edit=snippet.id) }}">Edit</a><form action="{{ url_for('delete_snippet', snippet_id=snippet.id) }}" method="POST" onsubmit="return confirm('Delete this snippet?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="delete-button" type="submit">Delete</button></form></div></div>
+  </article>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">⌘</div><h3>Your library is empty</h3><p>Add your first code snippet to start building your personal collection.</p><a href="{{ url_for('add_snippet') }}" class="primary-button">＋ Add your first snippet</a></div>
+  {% endfor %}
+</div>
+<p class="no-results" id="no-results" hidden>No matching snippets found. Try another search or language.</p>
+{% endblock %}
