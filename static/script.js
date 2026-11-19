@@ -1,64 +1,14 @@
-const searchInput = document.getElementById("search");
-const languageFilter = document.getElementById("language-filter");
-const cards = Array.from(document.querySelectorAll(".snippet-card"));
-const noResults = document.getElementById("no-results");
-const languageCount = document.getElementById("language-count");
-
-if (searchInput && languageFilter && languageCount) {
-    const languages = [...new Set(cards.map(card => card.dataset.language))].sort();
-    languages.forEach(language => {
-        const option = document.createElement("option");
-        option.value = language;
-        option.textContent = language.charAt(0).toUpperCase() + language.slice(1);
-        languageFilter.appendChild(option);
-    });
-    languageCount.textContent = languages.length;
-
-    function filterSnippets() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const selectedLanguage = languageFilter.value;
-        let visibleCount = 0;
-        cards.forEach(card => {
-            const visible = card.dataset.search.includes(searchTerm) &&
-                (selectedLanguage === "all" || card.dataset.language === selectedLanguage);
-            card.hidden = !visible;
-            if (visible) visibleCount++;
-        });
-        if (noResults) noResults.hidden = visibleCount !== 0;
-    }
-    searchInput.addEventListener("input", filterSnippets);
-    languageFilter.addEventListener("change", filterSnippets);
+const searchInput=document.getElementById("search");
+const languageFilter=document.getElementById("language-filter");
+const cards=Array.from(document.querySelectorAll(".snippet-card"));
+const noResults=document.getElementById("no-results");
+if(searchInput&&languageFilter){
+ const languages=[...new Set(cards.map(card=>card.dataset.language))].sort();
+ languages.forEach(language=>{const option=document.createElement("option");option.value=language;option.textContent=language.charAt(0).toUpperCase()+language.slice(1);languageFilter.appendChild(option);});
+ function filterSnippets(){const term=searchInput.value.toLowerCase().trim();const selected=languageFilter.value;let visible=0;cards.forEach(card=>{const match=card.dataset.search.includes(term)&&(selected==="all"||card.dataset.language===selected);card.hidden=!match;if(match)visible++;});if(noResults)noResults.hidden=visible!==0;}
+ searchInput.addEventListener("input",filterSnippets);languageFilter.addEventListener("change",filterSnippets);
 }
-
-document.querySelectorAll(".copy-button").forEach(button => {
-    button.addEventListener("click", async () => {
-        const originalText = button.textContent;
-        try {
-            await navigator.clipboard.writeText(button.dataset.code || "");
-            button.textContent = "Copied!";
-        } catch (error) {
-            button.textContent = "Copy failed";
-        }
-        window.setTimeout(() => { button.textContent = originalText; }, 1500);
-    });
-});
-
-// Framer Motion powers the entrance choreography; the CSS remains a graceful fallback.
-(async () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    try {
-        const { animate, stagger } = await import("https://esm.sh/framer-motion@11.18.2");
-        const intro = document.querySelector(".intro");
-        const statCards = document.querySelectorAll(".stat-card");
-        const snippetCards = document.querySelectorAll(".snippet-card");
-        const formSection = document.querySelector(".form-section");
-        if (intro) animate(intro, { opacity: [0, 1], y: [16, 0] }, { duration: .65, ease: [0.22, 1, 0.36, 1] });
-        if (statCards.length) animate(statCards, { opacity: [0, 1], y: [14, 0] }, { duration: .48, delay: stagger(.08), ease: [0.22, 1, 0.36, 1] });
-        if (snippetCards.length) animate(snippetCards, { opacity: [0, 1], y: [18, 0], scale: [.985, 1] }, { duration: .52, delay: stagger(.055), ease: [0.22, 1, 0.36, 1] });
-        if (formSection) animate(formSection, { opacity: [0, 1], y: [18, 0] }, { duration: .6, delay: .18, ease: [0.22, 1, 0.36, 1] });
-        const authCard = document.querySelector(".auth-card");
-        if (authCard) animate(authCard, { opacity: [0, 1], y: [18, 0], scale: [.985, 1] }, { duration: .65, ease: [0.22, 1, 0.36, 1] });
-    } catch (error) {
-        document.documentElement.classList.add("motion-fallback");
-    }
-})();
+document.querySelectorAll(".copy-button").forEach(button=>{button.addEventListener("click",async()=>{const original=button.textContent;try{await navigator.clipboard.writeText(button.dataset.code||"");button.textContent="Copied!";}catch(error){button.textContent="Copy failed";}window.setTimeout(()=>{button.textContent=original;},1500);});});
+const shell=document.getElementById("app-shell");const toggle=document.getElementById("sidebar-toggle");
+if(shell&&toggle){const mobile=()=>window.matchMedia("(max-width:720px)").matches;toggle.addEventListener("click",()=>{if(mobile()){shell.classList.toggle("mobile-nav-open");toggle.setAttribute("aria-label",shell.classList.contains("mobile-nav-open")?"Close navigation":"Open navigation");}else{shell.classList.toggle("sidebar-collapsed");toggle.setAttribute("aria-label",shell.classList.contains("sidebar-collapsed")?"Expand sidebar":"Collapse sidebar");}});document.addEventListener("click",event=>{if(mobile()&&shell.classList.contains("mobile-nav-open")&&!event.target.closest(".sidebar")&&!event.target.closest("#sidebar-toggle"))shell.classList.remove("mobile-nav-open");});document.querySelectorAll(".nav-link").forEach(link=>link.addEventListener("click",()=>shell.classList.remove("mobile-nav-open")));}
+(async()=>{if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;try{const{animate,stagger}=await import("https://esm.sh/framer-motion@11.18.2");const heading=document.querySelector(".page-heading");const metrics=document.querySelectorAll(".metric-card");const panels=document.querySelectorAll(".panel,.library-toolbar-panel");const snippetCards=document.querySelectorAll(".snippet-card");if(heading)animate(heading,{opacity:[0,1],y:[15,0]},{duration:.55,ease:[.22,1,.36,1]});if(metrics.length)animate(metrics,{opacity:[0,1],y:[13,0]},{duration:.45,delay:stagger(.07),ease:[.22,1,.36,1]});if(panels.length)animate(panels,{opacity:[0,1],y:[15,0]},{duration:.5,delay:stagger(.07),ease:[.22,1,.36,1]});if(snippetCards.length)animate(snippetCards,{opacity:[0,1],y:[16,0]},{duration:.48,delay:stagger(.045),ease:[.22,1,.36,1]});}catch(error){/* CSS remains the fallback. */}})();
