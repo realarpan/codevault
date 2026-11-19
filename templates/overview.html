@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set active_page = "overview" %}
+{% block title %}Overview | CodeVault{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><p class="eyebrow">YOUR DEVELOPER WORKSPACE</p><h1>Good to have you back.</h1><p class="page-subtitle">A clear view of your code library and what you've been saving.</p></div>
+  <a class="primary-button" href="{{ url_for('add_snippet') }}">＋ Add new snippet</a>
+</section>
+<section class="overview-stats">
+  <article class="metric-card metric-primary"><div class="metric-top"><span>Total snippets</span><span class="metric-icon">▤</span></div><strong>{{ stats.total }}</strong><small>Saved in your library</small><div class="metric-glow"></div></article>
+  <article class="metric-card"><div class="metric-top"><span>Languages</span><span class="metric-icon">⌘</span></div><strong>{{ stats.languages }}</strong><small>Different languages used</small></article>
+  <article class="metric-card"><div class="metric-top"><span>Workspace</span><span class="metric-icon">◈</span></div><strong class="metric-word">Private</strong><small>Your snippets, your space</small></article>
+  <article class="metric-card"><div class="metric-top"><span>Latest activity</span><span class="metric-icon">↗</span></div><strong class="metric-word">{% if recent %}Active{% else %}Ready{% endif %}</strong><small>{% if recent %}Your library is growing{% else %}Save your first snippet{% endif %}</small></article>
+</section>
+<section class="overview-grid">
+  <article class="panel recent-panel">
+    <div class="panel-heading"><div><h2>Recently added</h2><p>Your latest saved code snippets.</p></div><a class="text-link" href="{{ url_for('library') }}">View library <span>→</span></a></div>
+    {% if recent %}
+    <div class="recent-list">
+      {% for snippet in recent %}
+      <a class="recent-row" href="{{ url_for('add_snippet', edit=snippet.id) }}">
+        <span class="recent-language">{{ snippet.language[:2]|upper }}</span>
+        <span class="recent-info"><strong>{{ snippet.title }}</strong><small>{{ snippet.description or 'No description added.' }}</small></span>
+        <span class="recent-tag">{{ snippet.language }}</span><span class="recent-arrow">↗</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="overview-empty"><span>⌘</span><strong>Your library is ready</strong><p>Add your first snippet and it will appear here.</p><a class="text-link" href="{{ url_for('add_snippet') }}">Create a snippet →</a></div>
+    {% endif %}
+  </article>
+  <article class="panel language-panel">
+    <div class="panel-heading"><div><h2>Language breakdown</h2><p>What your library is built with.</p></div><span class="panel-icon">◉</span></div>
+    {% if language_stats %}
+    <div class="language-list">
+      {% for item in language_stats %}
+      <div class="language-item"><div class="language-label"><span>{{ item.language }}</span><b>{{ item.total }}</b></div><div class="language-track"><i style="width: {{ (item.total / stats.total * 100)|round|int }}%"></i></div></div>
+      {% endfor %}
+    </div>
+    {% else %}<div class="language-empty">Your language statistics will appear here when you save snippets.</div>{% endif %}
+    <a class="panel-bottom-link" href="{{ url_for('library') }}">Explore your library <span>→</span></a>
+  </article>
+</section>
+<section class="quick-actions">
+  <div><p class="eyebrow">KEEP BUILDING</p><h2>Your next idea belongs here.</h2><p>Keep useful code close, organized and ready when you need it.</p></div>
+  <div class="quick-action-links"><a href="{{ url_for('add_snippet') }}" class="quick-action-card"><span>＋</span><b>Add a snippet</b><small>Save a new piece of code</small></a><a href="{{ url_for('library') }}" class="quick-action-card"><span>▤</span><b>Browse library</b><small>Search and manage your code</small></a></div>
+</section>
+{% endblock %}
